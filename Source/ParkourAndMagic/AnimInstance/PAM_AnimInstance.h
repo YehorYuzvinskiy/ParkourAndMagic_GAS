@@ -13,5 +13,14 @@ UCLASS()
 class PARKOURANDMAGIC_API UPAM_AnimInstance : public UAnimInstance
 {
 	GENERATED_BODY()
-	
+
+protected:
+    UFUNCTION(BlueprintCallable, meta = (BlueprintThreadSafe))
+    class UBlendSpace* GetLocomotionBlendSpace() const;
+
+    UFUNCTION(BlueprintCallable, meta = (BlueprintThreadSafe))
+    class UAnimSequenceBase* GetIdleAnimation() const;
+
+      UPROPERTY(BlueprintReadWrite, EditAnywhere, Category = "Animation")
+    class UCharacterAnimationDataAsset* DefaultCharacterAnimDataAsset;
 };
