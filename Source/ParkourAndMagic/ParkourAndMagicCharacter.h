@@ -29,7 +29,9 @@ class AParkourAndMagicCharacter : public ACharacter, public IAbilitySystemInterf
     class UCameraComponent* FollowCamera;
 
 public:
-    AParkourAndMagicCharacter();
+    
+
+    AParkourAndMagicCharacter(const FObjectInitializer& ObjectInitializer);
 
     virtual void PostInitializeComponents() override;
 

@@ -15,10 +15,15 @@
 #include "AbilitySystem/Components/PAM_AbilitySystemComponentBase.h"
 #include "Net/UnrealNetwork.h"
 
+#include "ActorComponents/PAM_CharacterMovementComponent.h"
+
 //////////////////////////////////////////////////////////////////////////
 // AParkourAndMagicCharacter
 
-AParkourAndMagicCharacter::AParkourAndMagicCharacter()
+
+
+AParkourAndMagicCharacter::AParkourAndMagicCharacter(const FObjectInitializer& ObjectInitializer) :
+Super(ObjectInitializer.SetDefaultSubobjectClass<UPAM_CharacterMovementComponent>(ACharacter::CharacterMovementComponentName))
 {
     // Set size for collision capsule
     GetCapsuleComponent()->InitCapsuleSize(42.f, 96.0f);

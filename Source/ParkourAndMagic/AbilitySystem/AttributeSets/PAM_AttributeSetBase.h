@@ -27,6 +27,18 @@ public:
     FGameplayAttributeData MaxHealth;
     ATTRIBUTE_ACCESSORS(UPAM_AttributeSetBase, MaxHealth);
 
+    UPROPERTY(BlueprintReadOnly, Category = "Stamina", ReplicatedUsing = OnRep_Stamina)
+    FGameplayAttributeData Stamina;
+    ATTRIBUTE_ACCESSORS(UPAM_AttributeSetBase, Stamina);
+
+    UPROPERTY(BlueprintReadOnly, Category = "MaxStamina", ReplicatedUsing = OnRep_MaxStamina)
+    FGameplayAttributeData MaxStamina;
+    ATTRIBUTE_ACCESSORS(UPAM_AttributeSetBase, MaxStamina);
+
+    UPROPERTY(BlueprintReadOnly, Category = "MoveSpeed", ReplicatedUsing = OnRep_MaxMoveSpeed)
+    FGameplayAttributeData MaxMoveSpeed;
+    ATTRIBUTE_ACCESSORS(UPAM_AttributeSetBase, MaxMoveSpeed);
+
 protected:
     virtual void PostGameplayEffectExecute(const struct FGameplayEffectModCallbackData& Data) override;
 
@@ -35,4 +47,13 @@ protected:
 
     UFUNCTION()
     virtual void OnRep_MaxHealth(const FGameplayAttributeData& OldMaxHealth);
+
+    UFUNCTION()
+    virtual void OnRep_Stamina(const FGameplayAttributeData& OldStamina);
+
+    UFUNCTION()
+    virtual void OnRep_MaxStamina(const FGameplayAttributeData& OldMaxStamina);
+
+    UFUNCTION()
+    virtual void OnRep_MaxMoveSpeed(const FGameplayAttributeData& OldMaxMoveSpeed);
 };
