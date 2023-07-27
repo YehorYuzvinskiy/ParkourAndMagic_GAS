@@ -10,8 +10,10 @@
 
 #include "AbilitySystemComponent.h"
 #include "AbilitySystemBlueprintLibrary.h"
+#include "DataAssets/CharacterDataAsset.h"
 #include "AbilitySystem/AttributeSets/PAM_AttributeSetBase.h"
 #include "AbilitySystem/Components/PAM_AbilitySystemComponentBase.h"
+#include "Net/UnrealNetwork.h"
 
 //////////////////////////////////////////////////////////////////////////
 // AParkourAndMagicCharacter
@@ -63,6 +65,16 @@ AParkourAndMagicCharacter::AParkourAndMagicCharacter()
     AttributeSet = CreateDefaultSubobject<UPAM_AttributeSetBase>(TEXT("AttributeSet"));
 }
 
+void AParkourAndMagicCharacter::PostInitializeComponents()
+{
+    Super::PostInitializeComponents();
+
+    if (IsValid(CharacterDataAsset))
+    {
+        SetCharacterData(CharacterDataAsset->CharacterData);
+    }
+}
+
 UAbilitySystemComponent* AParkourAndMagicCharacter::GetAbilitySystemComponent() const
 {
     return AbilitySystemComponent;
@@ -70,7 +82,7 @@ UAbilitySystemComponent* AParkourAndMagicCharacter::GetAbilitySystemComponent() 
 
 bool AParkourAndMagicCharacter::ApplyGameplayEffectToSelf(TSubclassOf<UGameplayEffect> Effect, FGameplayEffectContextHandle OnEffectContext)
 {
-    if (Effect.Get()) return false;
+    if (!Effect.Get()) return false;
 
     FGameplayEffectSpecHandle SpecHandle = AbilitySystemComponent->MakeOutgoingSpec(Effect, 1, OnEffectContext);
     if (SpecHandle.IsValid())
@@ -82,22 +94,11 @@ bool AParkourAndMagicCharacter::ApplyGameplayEffectToSelf(TSubclassOf<UGameplayE
     return false;
 }
 
-void AParkourAndMagicCharacter::InitializeAttributes()
-{
-    if (GetLocalRole() == ROLE_Authority && DefaultAttributeSet && AttributeSet)
-    {
-        FGameplayEffectContextHandle EffectContext = AbilitySystemComponent->MakeEffectContext();
-        EffectContext.AddSourceObject(this);
-
-        ApplyGameplayEffectToSelf(DefaultAttributeSet, EffectContext);
-    }
-}
-
 void AParkourAndMagicCharacter::GiveAbilities()
 {
     if (HasAuthority() && AbilitySystemComponent)
     {
-        for (auto DefaultAbility : DefaultAbilities)
+        for (auto DefaultAbility : CharacterData.Abilities)
         {
             AbilitySystemComponent->GiveAbility(FGameplayAbilitySpec(DefaultAbility));
         }
@@ -106,17 +107,15 @@ void AParkourAndMagicCharacter::GiveAbilities()
 
 void AParkourAndMagicCharacter::ApplyStartupEffects()
 {
-    if (GetLocalRole() == ROLE_Authority && DefaultAttributeSet && AttributeSet)
+    if (GetLocalRole() == ROLE_Authority)
     {
         FGameplayEffectContextHandle EffectContext = AbilitySystemComponent->MakeEffectContext();
         EffectContext.AddSourceObject(this);
 
-        for (auto CharacterEffect : DefaultEffects)
+        for (auto CharacterEffect : CharacterData.Effects)
         {
             ApplyGameplayEffectToSelf(CharacterEffect, EffectContext);
         }
-
-        ApplyGameplayEffectToSelf(DefaultAttributeSet, EffectContext);
     }
 }
 
@@ -126,9 +125,8 @@ void AParkourAndMagicCharacter::PossessedBy(AController* NewController)
 
     AbilitySystemComponent->InitAbilityActorInfo(this, this);
 
-    InitializeAttributes();
-    GiveAbilities();
     ApplyStartupEffects();
+    GiveAbilities();
 }
 
 void AParkourAndMagicCharacter::OnRep_PlayerState()
@@ -136,9 +134,32 @@ void AParkourAndMagicCharacter::OnRep_PlayerState()
     Super::OnRep_PlayerState();
 
     AbilitySystemComponent->InitAbilityActorInfo(this, this);
-    InitializeAttributes();
+}
+FCharacterData AParkourAndMagicCharacter::GetCharacterData() const
+{
+    return CharacterData;
 }
 
+void AParkourAndMagicCharacter::SetCharacterData(const FCharacterData& InCharacterData)
+{
+    CharacterData = InCharacterData;
+
+    InitFromCharacterData(CharacterData);
+}
+
+void AParkourAndMagicCharacter::InitFromCharacterData(const FCharacterData& InCharacterData, bool bFromReplication) {}
+
+void AParkourAndMagicCharacter::OnRep_CharacterData()
+{
+    InitFromCharacterData(CharacterData, true);
+}
+
+void AParkourAndMagicCharacter::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const
+{
+    Super::GetLifetimeReplicatedProps(OutLifetimeProps);
+
+    DOREPLIFETIME(AParkourAndMagicCharacter, CharacterData);
+}
 //////////////////////////////////////////////////////////////////////////
 // Input
 
