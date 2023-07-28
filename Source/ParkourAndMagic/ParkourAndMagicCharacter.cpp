@@ -16,6 +16,7 @@
 #include "Net/UnrealNetwork.h"
 
 #include "ActorComponents/PAM_CharacterMovementComponent.h"
+#include "ActorComponents/FootstepsComponent.h"
 
 //////////////////////////////////////////////////////////////////////////
 // AParkourAndMagicCharacter
@@ -68,6 +69,8 @@ Super(ObjectInitializer.SetDefaultSubobjectClass<UPAM_CharacterMovementComponent
     AbilitySystemComponent->SetReplicationMode(EGameplayEffectReplicationMode::Mixed);
 
     AttributeSet = CreateDefaultSubobject<UPAM_AttributeSetBase>(TEXT("AttributeSet"));
+
+    FootstepsComponent = CreateDefaultSubobject<UFootstepsComponent>(TEXT("FootstepsComponent"));
 }
 
 void AParkourAndMagicCharacter::PostInitializeComponents()
@@ -150,6 +153,11 @@ void AParkourAndMagicCharacter::SetCharacterData(const FCharacterData& InCharact
     CharacterData = InCharacterData;
 
     InitFromCharacterData(CharacterData);
+}
+
+UFootstepsComponent* AParkourAndMagicCharacter::GetFootstepsComponent() const
+{
+    return FootstepsComponent;
 }
 
 void AParkourAndMagicCharacter::InitFromCharacterData(const FCharacterData& InCharacterData, bool bFromReplication) {}
