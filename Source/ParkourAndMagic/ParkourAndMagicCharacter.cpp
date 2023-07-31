@@ -17,6 +17,10 @@
 
 #include "ActorComponents/PAM_CharacterMovementComponent.h"
 #include "ActorComponents/FootstepsComponent.h"
+#include  "EnhancedInputComponent.h"
+#include "InputTriggers.h"
+#include "InputActionValue.h"
+#include <EnhancedInputSubsystems.h>
 
 //////////////////////////////////////////////////////////////////////////
 // AParkourAndMagicCharacter
@@ -102,6 +106,20 @@ bool AParkourAndMagicCharacter::ApplyGameplayEffectToSelf(TSubclassOf<UGameplayE
     return false;
 }
 
+void AParkourAndMagicCharacter::PawnClientRestart()
+{
+    Super::PawnClientRestart();
+
+    if (APlayerController* PC = Cast<APlayerController>(GetController()))
+    {
+        if (UEnhancedInputLocalPlayerSubsystem* Subsystem = ULocalPlayer::GetSubsystem<UEnhancedInputLocalPlayerSubsystem>(PC->GetLocalPlayer()))
+        {
+            Subsystem->ClearAllMappings();
+            Subsystem->AddMappingContext(DefaultMappingContext, 0);
+
+        }
+    } }
+
 void AParkourAndMagicCharacter::GiveAbilities()
 {
     if (HasAuthority() && AbilitySystemComponent)
@@ -162,6 +180,7 @@ UFootstepsComponent* AParkourAndMagicCharacter::GetFootstepsComponent() const
 
 void AParkourAndMagicCharacter::InitFromCharacterData(const FCharacterData& InCharacterData, bool bFromReplication) {}
 
+
 void AParkourAndMagicCharacter::OnRep_CharacterData()
 {
     InitFromCharacterData(CharacterData, true);
@@ -178,52 +197,50 @@ void AParkourAndMagicCharacter::GetLifetimeReplicatedProps(TArray<FLifetimePrope
 
 void AParkourAndMagicCharacter::SetupPlayerInputComponent(class UInputComponent* PlayerInputComponent)
 {
-    // Set up gameplay key bindings
+    //Set up gameplay key bindings
     check(PlayerInputComponent);
-    PlayerInputComponent->BindAction("Jump", IE_Pressed, this, &ACharacter::Jump);
-    PlayerInputComponent->BindAction("Jump", IE_Released, this, &ACharacter::StopJumping);
+    
 
-    PlayerInputComponent->BindAxis("Move Forward / Backward", this, &AParkourAndMagicCharacter::MoveForward);
-    PlayerInputComponent->BindAxis("Move Right / Left", this, &AParkourAndMagicCharacter::MoveRight);
+    if (UEnhancedInputComponent* PlayerEnhancedInputComponent = Cast<UEnhancedInputComponent>(PlayerInputComponent))
+    {
+        if (MoveForwardInputAction)
+        {
+            PlayerEnhancedInputComponent->BindAction(MoveForwardInputAction,  ETriggerEvent::Triggered, this, &AParkourAndMagicCharacter::OnMoveForwardAction); 
+        }
+        if (MoveRightInputAction)
+        {
+            PlayerEnhancedInputComponent->BindAction(
+                MoveRightInputAction,  ETriggerEvent::Triggered, this, &AParkourAndMagicCharacter::OnMoveRightAction);
+        }
+        if (TurnInputAction)
+        {
+            PlayerEnhancedInputComponent->BindAction(
+                TurnInputAction,  ETriggerEvent::Triggered, this, &AParkourAndMagicCharacter::OnTurnAction);
+        }
 
-    // We have 2 versions of the rotation bindings to handle different kinds of devices differently
-    // "turn" handles devices that provide an absolute delta, such as a mouse.
-    // "turnrate" is for devices that we choose to treat as a rate of change, such as an analog joystick
-    PlayerInputComponent->BindAxis("Turn Right / Left Mouse", this, &APawn::AddControllerYawInput);
-    PlayerInputComponent->BindAxis("Turn Right / Left Gamepad", this, &AParkourAndMagicCharacter::TurnAtRate);
-    PlayerInputComponent->BindAxis("Look Up / Down Mouse", this, &APawn::AddControllerPitchInput);
-    PlayerInputComponent->BindAxis("Look Up / Down Gamepad", this, &AParkourAndMagicCharacter::LookUpAtRate);
-
-    // handle touch devices
-    PlayerInputComponent->BindTouch(IE_Pressed, this, &AParkourAndMagicCharacter::TouchStarted);
-    PlayerInputComponent->BindTouch(IE_Released, this, &AParkourAndMagicCharacter::TouchStopped);
+         if (LookUpInputAction)
+        {
+            PlayerEnhancedInputComponent->BindAction(
+                LookUpInputAction,  ETriggerEvent::Triggered, this, &AParkourAndMagicCharacter::OnLookUpAction);
+        }
+        if (JumpInputAction)
+        {
+            PlayerEnhancedInputComponent->BindAction(
+                JumpInputAction,  ETriggerEvent::Triggered, this, &AParkourAndMagicCharacter::OnJumpActionStarted);
+            PlayerEnhancedInputComponent->BindAction(
+                JumpInputAction, ETriggerEvent::Completed, this, &AParkourAndMagicCharacter::OnJumpActionEnded);
+        }
+    }
+        
 }
 
-void AParkourAndMagicCharacter::TouchStarted(ETouchIndex::Type FingerIndex, FVector Location)
-{
-    Jump();
-}
 
-void AParkourAndMagicCharacter::TouchStopped(ETouchIndex::Type FingerIndex, FVector Location)
-{
-    StopJumping();
-}
 
-void AParkourAndMagicCharacter::TurnAtRate(float Rate)
+void AParkourAndMagicCharacter::OnMoveForwardAction(const FInputActionValue& Value)
 {
-    // calculate delta for this frame from the rate information
-    AddControllerYawInput(Rate * TurnRateGamepad * GetWorld()->GetDeltaSeconds());
-}
+    const float Magnitude = Value.GetMagnitude();
 
-void AParkourAndMagicCharacter::LookUpAtRate(float Rate)
-{
-    // calculate delta for this frame from the rate information
-    AddControllerPitchInput(Rate * TurnRateGamepad * GetWorld()->GetDeltaSeconds());
-}
-
-void AParkourAndMagicCharacter::MoveForward(float Value)
-{
-    if ((Controller != nullptr) && (Value != 0.0f))
+    if ((Controller != nullptr) && (Magnitude != 0.0f))
     {
         // find out which way is forward
         const FRotator Rotation = Controller->GetControlRotation();
@@ -231,13 +248,15 @@ void AParkourAndMagicCharacter::MoveForward(float Value)
 
         // get forward vector
         const FVector Direction = FRotationMatrix(YawRotation).GetUnitAxis(EAxis::X);
-        AddMovementInput(Direction, Value);
+        AddMovementInput(Direction, Magnitude);
     }
 }
 
-void AParkourAndMagicCharacter::MoveRight(float Value)
+void AParkourAndMagicCharacter::OnMoveRightAction(const FInputActionValue& Value)
 {
-    if ((Controller != nullptr) && (Value != 0.0f))
+    const float Magnitude = Value.GetMagnitude();
+
+    if ((Controller != nullptr) && (Magnitude != 0.0f))
     {
         // find out which way is right
         const FRotator Rotation = Controller->GetControlRotation();
@@ -246,6 +265,26 @@ void AParkourAndMagicCharacter::MoveRight(float Value)
         // get right vector
         const FVector Direction = FRotationMatrix(YawRotation).GetUnitAxis(EAxis::Y);
         // add movement in that direction
-        AddMovementInput(Direction, Value);
+        AddMovementInput(Direction, Magnitude);
     }
+}
+
+void AParkourAndMagicCharacter::OnTurnAction(const FInputActionValue& Value)
+{
+    AddControllerYawInput(Value.GetMagnitude() *TurnRateGamepad * GetWorld()->GetDeltaSeconds());
+}
+
+void AParkourAndMagicCharacter::OnLookUpAction(const FInputActionValue& Value)
+{
+    AddControllerPitchInput(Value.GetMagnitude() * TurnRateGamepad * GetWorld()->GetDeltaSeconds());
+}
+
+void AParkourAndMagicCharacter::OnJumpActionStarted(const FInputActionValue& Value)
+{
+    Jump();
+}
+
+void AParkourAndMagicCharacter::OnJumpActionEnded(const FInputActionValue& Value)
+{
+    StopJumping();
 }
