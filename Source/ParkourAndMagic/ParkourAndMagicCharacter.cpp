@@ -118,7 +118,17 @@ void AParkourAndMagicCharacter::PawnClientRestart()
             Subsystem->AddMappingContext(DefaultMappingContext, 0);
 
         }
-    } }
+    }
+}
+
+void AParkourAndMagicCharacter::Landed(const FHitResult& Hit) 
+{
+    Super::Landed(Hit);
+    if (AbilitySystemComponent)
+    {
+        AbilitySystemComponent->RemoveActiveEffectsWithTags(InAirTags);
+    }
+}
 
 void AParkourAndMagicCharacter::GiveAbilities()
 {
@@ -281,7 +291,12 @@ void AParkourAndMagicCharacter::OnLookUpAction(const FInputActionValue& Value)
 
 void AParkourAndMagicCharacter::OnJumpActionStarted(const FInputActionValue& Value)
 {
-    Jump();
+
+    FGameplayEventData Payload;
+    Payload.Instigator = this;
+    Payload.EventTag = JumpEventTag;
+
+    UAbilitySystemBlueprintLibrary::SendGameplayEventToActor(this, JumpEventTag, Payload);
 }
 
 void AParkourAndMagicCharacter::OnJumpActionEnded(const FInputActionValue& Value)

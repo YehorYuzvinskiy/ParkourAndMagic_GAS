@@ -46,6 +46,8 @@ public:
 
     virtual void PawnClientRestart() override;
 
+    virtual void Landed(const FHitResult& Hit) override;
+
 protected:
 
    
@@ -133,4 +135,16 @@ protected:
     void OnJumpActionEnded(const FInputActionValue& Value);
 
 
+    //Gameplay Events
+
+    protected:
+    UPROPERTY(EditDefaultsOnly)
+    FGameplayTag JumpEventTag;
+
+
+
+    //Gameplay Tags
+protected:
+    UPROPERTY(EditDefaultsOnly)
+    FGameplayTagContainer InAirTags;
 };
