@@ -17,7 +17,7 @@
 
 #include "ActorComponents/PAM_CharacterMovementComponent.h"
 #include "ActorComponents/FootstepsComponent.h"
-#include  "EnhancedInputComponent.h"
+#include "EnhancedInputComponent.h"
 #include "InputTriggers.h"
 #include "InputActionValue.h"
 #include <EnhancedInputSubsystems.h>
@@ -25,10 +25,8 @@
 //////////////////////////////////////////////////////////////////////////
 // AParkourAndMagicCharacter
 
-
-
-AParkourAndMagicCharacter::AParkourAndMagicCharacter(const FObjectInitializer& ObjectInitializer) :
-Super(ObjectInitializer.SetDefaultSubobjectClass<UPAM_CharacterMovementComponent>(ACharacter::CharacterMovementComponentName))
+AParkourAndMagicCharacter::AParkourAndMagicCharacter(const FObjectInitializer& ObjectInitializer)
+    : Super(ObjectInitializer.SetDefaultSubobjectClass<UPAM_CharacterMovementComponent>(ACharacter::CharacterMovementComponentName))
 {
     // Set size for collision capsule
     GetCapsuleComponent()->InitCapsuleSize(42.f, 96.0f);
@@ -112,22 +110,57 @@ void AParkourAndMagicCharacter::PawnClientRestart()
 
     if (APlayerController* PC = Cast<APlayerController>(GetController()))
     {
-        if (UEnhancedInputLocalPlayerSubsystem* Subsystem = ULocalPlayer::GetSubsystem<UEnhancedInputLocalPlayerSubsystem>(PC->GetLocalPlayer()))
+        if (UEnhancedInputLocalPlayerSubsystem* Subsystem =
+                ULocalPlayer::GetSubsystem<UEnhancedInputLocalPlayerSubsystem>(PC->GetLocalPlayer()))
         {
             Subsystem->ClearAllMappings();
             Subsystem->AddMappingContext(DefaultMappingContext, 0);
-
         }
     }
 }
 
-void AParkourAndMagicCharacter::Landed(const FHitResult& Hit) 
+void AParkourAndMagicCharacter::Landed(const FHitResult& Hit)
 {
     Super::Landed(Hit);
     if (AbilitySystemComponent)
     {
         AbilitySystemComponent->RemoveActiveEffectsWithTags(InAirTags);
     }
+}
+
+void AParkourAndMagicCharacter::OnStartCrouch(float HalfHeightAdjust, float ScaledHalfHeightAdjust) 
+{
+    Super::OnStartCrouch(HalfHeightAdjust, ScaledHalfHeightAdjust);
+
+    
+
+    if (!CrouchStateEffect.Get()) return;
+
+    if (AbilitySystemComponent)
+    {
+        FGameplayEffectContextHandle EffectContext = AbilitySystemComponent->MakeEffectContext();
+        FGameplayEffectSpecHandle SpecHandle = AbilitySystemComponent->MakeOutgoingSpec(CrouchStateEffect, 1, EffectContext);
+
+        if (SpecHandle.IsValid())
+        {
+            FActiveGameplayEffectHandle ActiveGEHandle = AbilitySystemComponent->ApplyGameplayEffectSpecToSelf(*SpecHandle.Data.Get());
+
+            if (!ActiveGEHandle.WasSuccessfullyApplied())
+            {
+                ABILITY_LOG(Log, TEXT("Ability %s failed to apply crouch effect %s"), *GetName(), *GetNameSafe(CrouchStateEffect));
+            }
+        }
+    }
+}
+
+void AParkourAndMagicCharacter::OnEndCrouch(float HalfHeightAdjust, float ScaledHalfHeightAdjust) 
+{
+    if (AbilitySystemComponent && CrouchStateEffect.Get())
+    {
+        AbilitySystemComponent->RemoveActiveGameplayEffectBySourceEffect(CrouchStateEffect, AbilitySystemComponent);
+    }
+        Super::OnEndCrouch(HalfHeightAdjust, ScaledHalfHeightAdjust);
+    
 }
 
 void AParkourAndMagicCharacter::GiveAbilities()
@@ -190,7 +223,6 @@ UFootstepsComponent* AParkourAndMagicCharacter::GetFootstepsComponent() const
 
 void AParkourAndMagicCharacter::InitFromCharacterData(const FCharacterData& InCharacterData, bool bFromReplication) {}
 
-
 void AParkourAndMagicCharacter::OnRep_CharacterData()
 {
     InitFromCharacterData(CharacterData, true);
@@ -207,44 +239,48 @@ void AParkourAndMagicCharacter::GetLifetimeReplicatedProps(TArray<FLifetimePrope
 
 void AParkourAndMagicCharacter::SetupPlayerInputComponent(class UInputComponent* PlayerInputComponent)
 {
-    //Set up gameplay key bindings
+    // Set up gameplay key bindings
     check(PlayerInputComponent);
-    
 
     if (UEnhancedInputComponent* PlayerEnhancedInputComponent = Cast<UEnhancedInputComponent>(PlayerInputComponent))
     {
         if (MoveForwardInputAction)
         {
-            PlayerEnhancedInputComponent->BindAction(MoveForwardInputAction,  ETriggerEvent::Triggered, this, &AParkourAndMagicCharacter::OnMoveForwardAction); 
+            PlayerEnhancedInputComponent->BindAction(
+                MoveForwardInputAction, ETriggerEvent::Triggered, this, &AParkourAndMagicCharacter::OnMoveForwardAction);
         }
         if (MoveRightInputAction)
         {
             PlayerEnhancedInputComponent->BindAction(
-                MoveRightInputAction,  ETriggerEvent::Triggered, this, &AParkourAndMagicCharacter::OnMoveRightAction);
+                MoveRightInputAction, ETriggerEvent::Triggered, this, &AParkourAndMagicCharacter::OnMoveRightAction);
         }
         if (TurnInputAction)
         {
             PlayerEnhancedInputComponent->BindAction(
-                TurnInputAction,  ETriggerEvent::Triggered, this, &AParkourAndMagicCharacter::OnTurnAction);
+                TurnInputAction, ETriggerEvent::Triggered, this, &AParkourAndMagicCharacter::OnTurnAction);
         }
 
-         if (LookUpInputAction)
+        if (LookUpInputAction)
         {
             PlayerEnhancedInputComponent->BindAction(
-                LookUpInputAction,  ETriggerEvent::Triggered, this, &AParkourAndMagicCharacter::OnLookUpAction);
+                LookUpInputAction, ETriggerEvent::Triggered, this, &AParkourAndMagicCharacter::OnLookUpAction);
         }
         if (JumpInputAction)
         {
             PlayerEnhancedInputComponent->BindAction(
-                JumpInputAction,  ETriggerEvent::Triggered, this, &AParkourAndMagicCharacter::OnJumpActionStarted);
+                JumpInputAction, ETriggerEvent::Triggered, this, &AParkourAndMagicCharacter::OnJumpActionStarted);
             PlayerEnhancedInputComponent->BindAction(
                 JumpInputAction, ETriggerEvent::Completed, this, &AParkourAndMagicCharacter::OnJumpActionEnded);
         }
+        if (CrouchInputAction)
+        {
+            PlayerEnhancedInputComponent->BindAction(
+                CrouchInputAction, ETriggerEvent::Triggered, this, &AParkourAndMagicCharacter::OnCrouchActionStarted);
+            PlayerEnhancedInputComponent->BindAction(
+                CrouchInputAction, ETriggerEvent::Completed, this, &AParkourAndMagicCharacter::OnCrouchActionEnded);
+        }
     }
-        
 }
-
-
 
 void AParkourAndMagicCharacter::OnMoveForwardAction(const FInputActionValue& Value)
 {
@@ -281,7 +317,7 @@ void AParkourAndMagicCharacter::OnMoveRightAction(const FInputActionValue& Value
 
 void AParkourAndMagicCharacter::OnTurnAction(const FInputActionValue& Value)
 {
-    AddControllerYawInput(Value.GetMagnitude() *TurnRateGamepad * GetWorld()->GetDeltaSeconds());
+    AddControllerYawInput(Value.GetMagnitude() * TurnRateGamepad * GetWorld()->GetDeltaSeconds());
 }
 
 void AParkourAndMagicCharacter::OnLookUpAction(const FInputActionValue& Value)
@@ -301,5 +337,21 @@ void AParkourAndMagicCharacter::OnJumpActionStarted(const FInputActionValue& Val
 
 void AParkourAndMagicCharacter::OnJumpActionEnded(const FInputActionValue& Value)
 {
-    StopJumping();
+    // StopJumping();
+}
+
+void AParkourAndMagicCharacter::OnCrouchActionStarted(const FInputActionValue& Value)
+{
+    if (AbilitySystemComponent)
+    {
+        AbilitySystemComponent->TryActivateAbilitiesByTag(CrouchTags, true);
+    }
+}
+
+void AParkourAndMagicCharacter::OnCrouchActionEnded(const FInputActionValue& Value)
+{
+    if (AbilitySystemComponent)
+    {
+        AbilitySystemComponent->CancelAbilities(&CrouchTags);
+    }
 }

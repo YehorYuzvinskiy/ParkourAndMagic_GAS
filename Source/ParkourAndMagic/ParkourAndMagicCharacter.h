@@ -30,8 +30,6 @@ class AParkourAndMagicCharacter : public ACharacter, public IAbilitySystemInterf
     class UCameraComponent* FollowCamera;
 
 public:
-    
-
     AParkourAndMagicCharacter(const FObjectInitializer& ObjectInitializer);
 
     virtual void PostInitializeComponents() override;
@@ -48,22 +46,22 @@ public:
 
     virtual void Landed(const FHitResult& Hit) override;
 
-protected:
+    virtual void OnStartCrouch(float HalfHeightAdjust, float ScaledHalfHeightAdjust) override;
 
-   
+    virtual void OnEndCrouch(float HalfHeightAdjust, float ScaledHalfHeightAdjust) override;
+
+protected:
     void GiveAbilities();
     void ApplyStartupEffects();
 
     virtual void PossessedBy(AController* NewController) override;
     virtual void OnRep_PlayerState() override;
 
-
     UPROPERTY(EditDefaultsOnly)
     UPAM_AbilitySystemComponentBase* AbilitySystemComponent;
 
     UPROPERTY(Transient)
     UPAM_AttributeSetBase* AttributeSet;
-
 
 protected:
     // APawn interface
@@ -82,11 +80,10 @@ public:
     UFUNCTION(BlueprintCallable)
     void SetCharacterData(const FCharacterData& InCharacterData);
 
-    
     class UFootstepsComponent* GetFootstepsComponent() const;
 
 protected:
-    UPROPERTY(ReplicatedUsing= OnRep_CharacterData)
+    UPROPERTY(ReplicatedUsing = OnRep_CharacterData)
     FCharacterData CharacterData;
 
     UFUNCTION()
@@ -100,10 +97,9 @@ protected:
     UPROPERTY(BlueprintReadOnly)
     class UFootstepsComponent* FootstepsComponent;
 
-    //Enhanced Input
+    // Enhanced Input
 
 protected:
-
     UPROPERTY(EditDefaultsOnly)
     class UInputMappingContext* DefaultMappingContext;
 
@@ -122,6 +118,9 @@ protected:
     UPROPERTY(EditDefaultsOnly)
     class UInputAction* JumpInputAction;
 
+    UPROPERTY(EditDefaultsOnly)
+    class UInputAction* CrouchInputAction;
+
     void OnMoveForwardAction(const FInputActionValue& Value);
 
     void OnMoveRightAction(const FInputActionValue& Value);
@@ -134,17 +133,27 @@ protected:
 
     void OnJumpActionEnded(const FInputActionValue& Value);
 
+    void OnCrouchActionStarted(const FInputActionValue& Value);
 
-    //Gameplay Events
+    void OnCrouchActionEnded(const FInputActionValue& Value);
 
-    protected:
+    // Gameplay Events
+
+protected:
     UPROPERTY(EditDefaultsOnly)
     FGameplayTag JumpEventTag;
 
-
-
-    //Gameplay Tags
+    // Gameplay Tags
 protected:
     UPROPERTY(EditDefaultsOnly)
     FGameplayTagContainer InAirTags;
+
+    UPROPERTY(EditDefaultsOnly)
+    FGameplayTagContainer CrouchTags;
+
+    // Gameplay Effect
+
+protected:
+    UPROPERTY(EditDefaultsOnly)
+    TSubclassOf<UGameplayEffect> CrouchStateEffect;
 };
