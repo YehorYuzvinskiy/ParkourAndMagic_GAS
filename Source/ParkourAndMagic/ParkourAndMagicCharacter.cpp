@@ -73,6 +73,9 @@ AParkourAndMagicCharacter::AParkourAndMagicCharacter(const FObjectInitializer& O
     AttributeSet = CreateDefaultSubobject<UPAM_AttributeSetBase>(TEXT("AttributeSet"));
 
     FootstepsComponent = CreateDefaultSubobject<UFootstepsComponent>(TEXT("FootstepsComponent"));
+
+    AbilitySystemComponent->GetGameplayAttributeValueChangeDelegate(AttributeSet->GetMaxMoveSpeedAttribute())
+        .AddUObject(this, &AParkourAndMagicCharacter::OnMaxMovementSpeedChanged);
 }
 
 void AParkourAndMagicCharacter::PostInitializeComponents()
@@ -221,6 +224,11 @@ UFootstepsComponent* AParkourAndMagicCharacter::GetFootstepsComponent() const
     return FootstepsComponent;
 }
 
+void AParkourAndMagicCharacter::OnMaxMovementSpeedChanged(const FOnAttributeChangeData& Data) 
+{
+    GetCharacterMovement()->MaxWalkSpeed = Data.NewValue;
+}
+
 void AParkourAndMagicCharacter::InitFromCharacterData(const FCharacterData& InCharacterData, bool bFromReplication) {}
 
 void AParkourAndMagicCharacter::OnRep_CharacterData()
@@ -278,6 +286,14 @@ void AParkourAndMagicCharacter::SetupPlayerInputComponent(class UInputComponent*
                 CrouchInputAction, ETriggerEvent::Triggered, this, &AParkourAndMagicCharacter::OnCrouchActionStarted);
             PlayerEnhancedInputComponent->BindAction(
                 CrouchInputAction, ETriggerEvent::Completed, this, &AParkourAndMagicCharacter::OnCrouchActionEnded);
+        }
+
+        if (SprintInputAction)
+        {
+            PlayerEnhancedInputComponent->BindAction(
+                SprintInputAction, ETriggerEvent::Started, this, &AParkourAndMagicCharacter::OnSprintActionStarted);
+            PlayerEnhancedInputComponent->BindAction(
+                SprintInputAction, ETriggerEvent::Completed, this, &AParkourAndMagicCharacter::OnSprintActionEnded);
         }
     }
 }
@@ -353,5 +369,21 @@ void AParkourAndMagicCharacter::OnCrouchActionEnded(const FInputActionValue& Val
     if (AbilitySystemComponent)
     {
         AbilitySystemComponent->CancelAbilities(&CrouchTags);
+    }
+}
+
+void AParkourAndMagicCharacter::OnSprintActionStarted(const FInputActionValue& Value) 
+{
+    if (AbilitySystemComponent)
+    {
+        AbilitySystemComponent->TryActivateAbilitiesByTag(SprintTags, true);
+    }
+}
+
+void AParkourAndMagicCharacter::OnSprintActionEnded(const FInputActionValue& Value) 
+{
+    if (AbilitySystemComponent)
+    {
+        AbilitySystemComponent->CancelAbilities(&SprintTags);
     }
 }

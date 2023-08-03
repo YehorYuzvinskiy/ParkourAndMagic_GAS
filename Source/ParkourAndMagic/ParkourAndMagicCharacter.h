@@ -63,6 +63,8 @@ protected:
     UPROPERTY(Transient)
     UPAM_AttributeSetBase* AttributeSet;
 
+
+
 protected:
     // APawn interface
     virtual void SetupPlayerInputComponent(class UInputComponent* PlayerInputComponent) override;
@@ -81,6 +83,8 @@ public:
     void SetCharacterData(const FCharacterData& InCharacterData);
 
     class UFootstepsComponent* GetFootstepsComponent() const;
+
+    void OnMaxMovementSpeedChanged(const FOnAttributeChangeData& Data); 
 
 protected:
     UPROPERTY(ReplicatedUsing = OnRep_CharacterData)
@@ -121,6 +125,9 @@ protected:
     UPROPERTY(EditDefaultsOnly)
     class UInputAction* CrouchInputAction;
 
+    UPROPERTY(EditDefaultsOnly)
+    class UInputAction* SprintInputAction;
+
     void OnMoveForwardAction(const FInputActionValue& Value);
 
     void OnMoveRightAction(const FInputActionValue& Value);
@@ -137,6 +144,10 @@ protected:
 
     void OnCrouchActionEnded(const FInputActionValue& Value);
 
+    void OnSprintActionStarted(const FInputActionValue& Value);
+
+    void OnSprintActionEnded(const FInputActionValue& Value);
+
     // Gameplay Events
 
 protected:
@@ -151,9 +162,18 @@ protected:
     UPROPERTY(EditDefaultsOnly)
     FGameplayTagContainer CrouchTags;
 
+     UPROPERTY(EditDefaultsOnly)
+    FGameplayTagContainer SprintTags;
+
     // Gameplay Effect
 
 protected:
     UPROPERTY(EditDefaultsOnly)
     TSubclassOf<UGameplayEffect> CrouchStateEffect;
+
+    //delegates
+
+    protected:
+    FDelegateHandle MaxMovementSpeedChangedDelegateHandle;
+
 };

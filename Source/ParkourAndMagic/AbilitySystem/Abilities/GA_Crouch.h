@@ -6,6 +6,7 @@
 #include "AbilitySystem/Abilities/PAM_GameplayAbility.h"
 #include "GA_Crouch.generated.h"
 
+
 UCLASS()
 class PARKOURANDMAGIC_API UGA_Crouch : public UPAM_GameplayAbility
 {
