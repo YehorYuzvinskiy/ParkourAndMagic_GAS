@@ -15,6 +15,7 @@
 #include "AbilitySystem/Components/PAM_AbilitySystemComponentBase.h"
 #include "Net/UnrealNetwork.h"
 
+
 #include "ActorComponents/PAM_CharacterMovementComponent.h"
 #include "ActorComponents/FootstepsComponent.h"
 #include "EnhancedInputComponent.h"
@@ -51,6 +52,8 @@ AParkourAndMagicCharacter::AParkourAndMagicCharacter(const FObjectInitializer& O
     GetCharacterMovement()->MinAnalogWalkSpeed = 20.f;
     GetCharacterMovement()->BrakingDecelerationWalking = 2000.f;
 
+    PAMCharacterMovementComponent = Cast<UPAM_CharacterMovementComponent>(GetCharacterMovement());
+
     // Create a camera boom (pulls in towards the player if there is a collision)
     CameraBoom = CreateDefaultSubobject<USpringArmComponent>(TEXT("CameraBoom"));
     CameraBoom->SetupAttachment(RootComponent);
@@ -72,10 +75,12 @@ AParkourAndMagicCharacter::AParkourAndMagicCharacter(const FObjectInitializer& O
 
     AttributeSet = CreateDefaultSubobject<UPAM_AttributeSetBase>(TEXT("AttributeSet"));
 
-    FootstepsComponent = CreateDefaultSubobject<UFootstepsComponent>(TEXT("FootstepsComponent"));
-
     AbilitySystemComponent->GetGameplayAttributeValueChangeDelegate(AttributeSet->GetMaxMoveSpeedAttribute())
         .AddUObject(this, &AParkourAndMagicCharacter::OnMaxMovementSpeedChanged);
+
+    FootstepsComponent = CreateDefaultSubobject<UFootstepsComponent>(TEXT("FootstepsComponent"));
+
+    PAMMotionWarpingComponent = CreateDefaultSubobject<UPAM_MotionWarpingComponent>(TEXT("MotionWarpingComponent"));
 }
 
 void AParkourAndMagicCharacter::PostInitializeComponents()
@@ -131,11 +136,9 @@ void AParkourAndMagicCharacter::Landed(const FHitResult& Hit)
     }
 }
 
-void AParkourAndMagicCharacter::OnStartCrouch(float HalfHeightAdjust, float ScaledHalfHeightAdjust) 
+void AParkourAndMagicCharacter::OnStartCrouch(float HalfHeightAdjust, float ScaledHalfHeightAdjust)
 {
     Super::OnStartCrouch(HalfHeightAdjust, ScaledHalfHeightAdjust);
-
-    
 
     if (!CrouchStateEffect.Get()) return;
 
@@ -156,14 +159,18 @@ void AParkourAndMagicCharacter::OnStartCrouch(float HalfHeightAdjust, float Scal
     }
 }
 
-void AParkourAndMagicCharacter::OnEndCrouch(float HalfHeightAdjust, float ScaledHalfHeightAdjust) 
+void AParkourAndMagicCharacter::OnEndCrouch(float HalfHeightAdjust, float ScaledHalfHeightAdjust)
 {
     if (AbilitySystemComponent && CrouchStateEffect.Get())
     {
         AbilitySystemComponent->RemoveActiveGameplayEffectBySourceEffect(CrouchStateEffect, AbilitySystemComponent);
     }
-        Super::OnEndCrouch(HalfHeightAdjust, ScaledHalfHeightAdjust);
-    
+    Super::OnEndCrouch(HalfHeightAdjust, ScaledHalfHeightAdjust);
+}
+
+UPAM_MotionWarpingComponent* AParkourAndMagicCharacter::GetMotionWarpingComponent() const
+{
+    return PAMMotionWarpingComponent;
 }
 
 void AParkourAndMagicCharacter::GiveAbilities()
@@ -224,7 +231,7 @@ UFootstepsComponent* AParkourAndMagicCharacter::GetFootstepsComponent() const
     return FootstepsComponent;
 }
 
-void AParkourAndMagicCharacter::OnMaxMovementSpeedChanged(const FOnAttributeChangeData& Data) 
+void AParkourAndMagicCharacter::OnMaxMovementSpeedChanged(const FOnAttributeChangeData& Data)
 {
     GetCharacterMovement()->MaxWalkSpeed = Data.NewValue;
 }
@@ -343,12 +350,7 @@ void AParkourAndMagicCharacter::OnLookUpAction(const FInputActionValue& Value)
 
 void AParkourAndMagicCharacter::OnJumpActionStarted(const FInputActionValue& Value)
 {
-
-    FGameplayEventData Payload;
-    Payload.Instigator = this;
-    Payload.EventTag = JumpEventTag;
-
-    UAbilitySystemBlueprintLibrary::SendGameplayEventToActor(this, JumpEventTag, Payload);
+    PAMCharacterMovementComponent->TryTraversal(AbilitySystemComponent);
 }
 
 void AParkourAndMagicCharacter::OnJumpActionEnded(const FInputActionValue& Value)
@@ -372,7 +374,7 @@ void AParkourAndMagicCharacter::OnCrouchActionEnded(const FInputActionValue& Val
     }
 }
 
-void AParkourAndMagicCharacter::OnSprintActionStarted(const FInputActionValue& Value) 
+void AParkourAndMagicCharacter::OnSprintActionStarted(const FInputActionValue& Value)
 {
     if (AbilitySystemComponent)
     {
@@ -380,7 +382,7 @@ void AParkourAndMagicCharacter::OnSprintActionStarted(const FInputActionValue& V
     }
 }
 
-void AParkourAndMagicCharacter::OnSprintActionEnded(const FInputActionValue& Value) 
+void AParkourAndMagicCharacter::OnSprintActionEnded(const FInputActionValue& Value)
 {
     if (AbilitySystemComponent)
     {

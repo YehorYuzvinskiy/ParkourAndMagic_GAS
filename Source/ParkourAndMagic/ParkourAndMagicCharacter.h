@@ -8,6 +8,7 @@
 #include "AbilitySystemInterface.h"
 #include "PAM_GameTypes.h"
 #include "InputActionValue.h"
+#include "ActorComponents/PAM_MotionWarpingComponent.h"
 #include "ParkourAndMagicCharacter.generated.h"
 
 class UPAM_AbilitySystemComponentBase;
@@ -15,6 +16,9 @@ class UPAM_AttributeSetBase;
 
 class UGameplayEffect;
 class UGameplayAbility;
+
+class UPAM_MotionWarpingComponent;
+class UPAM_CharacterMovementComponent;
 
 UCLASS(config = Game)
 class AParkourAndMagicCharacter : public ACharacter, public IAbilitySystemInterface
@@ -50,6 +54,8 @@ public:
 
     virtual void OnEndCrouch(float HalfHeightAdjust, float ScaledHalfHeightAdjust) override;
 
+    UPAM_MotionWarpingComponent* GetMotionWarpingComponent() const;
+
 protected:
     void GiveAbilities();
     void ApplyStartupEffects();
@@ -63,7 +69,10 @@ protected:
     UPROPERTY(Transient)
     UPAM_AttributeSetBase* AttributeSet;
 
+    UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = MotionWarping)
+    UPAM_MotionWarpingComponent* PAMMotionWarpingComponent;
 
+    UPAM_CharacterMovementComponent* PAMCharacterMovementComponent;
 
 protected:
     // APawn interface
