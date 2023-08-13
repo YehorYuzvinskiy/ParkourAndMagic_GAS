@@ -283,7 +283,7 @@ void AParkourAndMagicCharacter::SetupPlayerInputComponent(class UInputComponent*
         if (JumpInputAction)
         {
             PlayerEnhancedInputComponent->BindAction(
-                JumpInputAction, ETriggerEvent::Triggered, this, &AParkourAndMagicCharacter::OnJumpActionStarted);
+                JumpInputAction, ETriggerEvent::Started, this, &AParkourAndMagicCharacter::OnJumpActionStarted);
             PlayerEnhancedInputComponent->BindAction(
                 JumpInputAction, ETriggerEvent::Completed, this, &AParkourAndMagicCharacter::OnJumpActionEnded);
         }

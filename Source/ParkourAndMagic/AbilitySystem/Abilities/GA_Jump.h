@@ -22,4 +22,10 @@ class PARKOURANDMAGIC_API UGA_Jump : public UPAM_GameplayAbility
     virtual void ActivateAbility(const FGameplayAbilitySpecHandle Handle, const FGameplayAbilityActorInfo* ActorInfo,
         const FGameplayAbilityActivationInfo ActivationInfo, const FGameplayEventData* TriggerEventData);
 
+    protected:
+    UPROPERTY(EditDefaultsOnly)
+    FGameplayTag WallRunStateTag;
+
+    UPROPERTY(EditDefaultsOnly)
+    float OffWallJumpStrenght = 100.f;
 };
