@@ -2,6 +2,7 @@
 
 #include "AbilitySystem/Abilities/PAM_GameplayAbility.h"
 #include "AbilitySystemComponent.h"
+#include "AbilitySystemLog.h"
 #include "ParkourAndMagicCharacter.h"
 
 void UPAM_GameplayAbility::ActivateAbility(const FGameplayAbilitySpecHandle Handle, const FGameplayAbilityActorInfo* ActorInfo,
@@ -25,7 +26,7 @@ void UPAM_GameplayAbility::ActivateAbility(const FGameplayAbilitySpecHandle Hand
 
                 if (!ActiveGEHandle.WasSuccessfullyApplied())
                 {
-                    ABILITY_LOG(Log, TEXT("Ability %s failed to apply startup effect %s"), *GetName(), *GetNameSafe(GameplayEffect));
+                   // ABILITY_LOG(Log, TEXT("Ability %s failed to apply startup effect %s"), *GetName(), *GetNameSafe(GameplayEffect));
                 }
             }
         }

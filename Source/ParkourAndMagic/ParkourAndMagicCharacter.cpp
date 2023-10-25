@@ -14,6 +14,7 @@
 #include "AbilitySystem/AttributeSets/PAM_AttributeSetBase.h"
 #include "AbilitySystem/Components/PAM_AbilitySystemComponentBase.h"
 #include "Net/UnrealNetwork.h"
+#include "AbilitySystemLog.h"
 
 
 #include "ActorComponents/PAM_CharacterMovementComponent.h"

@@ -13,9 +13,12 @@ class PARKOURANDMAGIC_API UPAM_MotionWarpingComponent : public UMotionWarpingCom
     GENERATED_BODY()
 
 public:
-    UPAM_MotionWarpingComponent(const FObjectInitializer& ObjectInitazier);
+    
+    UPAM_MotionWarpingComponent(const FObjectInitializer& ObjectInitializer);
+    /*
     void SendWarpPointToClients();
 
     UFUNCTION(NetMulticast, Reliable)
     void MulticastSyncWarpPoint(const TArray<FMotionWarpingTargetByLocationAndRotation>& Targets);
+    */
 };

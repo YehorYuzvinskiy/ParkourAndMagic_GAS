@@ -178,7 +178,7 @@ void UGA_Vault::ActivateAbility(const FGameplayAbilitySpecHandle Handle, const F
         MotionWarpingComponent->AddOrUpdateWarpTargetFromLocationAndRotation(
             TEXT("JumpOverLocation"), JumpOverLocation, Character->GetActorRotation());
 
-        MotionWarpingComponent->SendWarpPointToClients();
+        //MotionWarpingComponent->SendWarpPointToClients();
     }
     MontageTask = UAbilityTask_PlayMontageAndWait::CreatePlayMontageAndWaitProxy(this, NAME_None, VaultMontage);
 
